@@ -3,7 +3,7 @@
 # Author: Abaysew
 
 
-SAMPLE="ERR1485273"
+SAMPLE="ERR15418593"
 REF="ref_genome/ref.fasta" < spacify your referenece sequence and path
 THREADS=4
 
