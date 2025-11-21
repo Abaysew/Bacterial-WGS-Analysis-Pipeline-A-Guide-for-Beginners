@@ -1,2 +1,2 @@
-# Bacterial-Genome-QC-and-Filtering-Pipeline
-This repository contains scripts and workflows for (QC) and filtering of bacterial (WGS) data. It is designed to process raw Illumina sequencing reads, perform quality assessment using FastQC, MultiQC, and fastp/Trimmomatic, trim low-quality bases and adapter sequences, and produce high-quality reads ready for downstream analyses. 
+# Bacterial Genome QC, Filtering, Alignment, Variant Calling & Phylogenetic Analysis Pipeline for Beginners
+This repository contains scripts and workflows for end-to-end analysis of bacterial whole-genome sequencing (WGS) data, from quality control (QC) to phylogenetic analysis. It is designed to process raw paired-end Illumina sequencing reads and perform analyses using a variety of bioinformatics tools.
