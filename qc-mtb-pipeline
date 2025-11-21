@@ -1,0 +1,67 @@
+#!/bin/bash
+# MTB QC and Trimming Pipeline
+# Author: Abaysew
+
+set -e
+
+# Update paths and sample
+RAW_DIR="raw_data/mtb"      # <- Updated directory path based on your location
+SAMPLE="ERR1485273"         # <- update for each sample
+
+echo "Counting reads in $RAW_DIR/${SAMPLE}_1.fastq.gz..."
+echo $(( $(zcat "$RAW_DIR/${SAMPLE}_1.fastq.gz" | wc -l) / 4 ))
+
+# Create output directories
+mkdir -p qc_raw/mtb/fastqc
+mkdir -p qc_trim/mtb/fastp
+mkdir -p qc_trim/mtb/trimmomatic
+mkdir -p trimmed/mtb/fastp
+mkdir -p trimmed/mtb/trimmomatic
+
+# Raw QC
+fastqc "$RAW_DIR/${SAMPLE}"_*.fastq.gz -o qc_raw/mtb/fastqc
+multiqc qc_raw/mtb/fastqc -o qc_raw/mtb/fastqc
+
+# fastp trimming
+fastp \
+  -i "$RAW_DIR/${SAMPLE}_1.fastq.gz" \
+  -I "$RAW_DIR/${SAMPLE}_2.fastq.gz" \
+  -l 30 \
+  --cut_front --cut_tail \
+  -W 4 -M 20 \
+  --detect_adapter_for_pe \
+  -w 4 \
+  -o trimmed/mtb/fastp/${SAMPLE}_R1.trimmed.fastq.gz \
+  -O trimmed/mtb/fastp/${SAMPLE}_R2.trimmed.fastq.gz \
+  --html qc_trim/mtb/fastp/${SAMPLE}.fastp.html \
+  --json qc_trim/mtb/fastp/${SAMPLE}.fastp.json
+
+# QC after fastp
+fastqc trimmed/mtb/fastp/${SAMPLE}_*.fastq.gz -o qc_trim/mtb/fastp
+multiqc qc_trim/mtb/fastp -o qc_trim/mtb/fastp
+
+# Trimmomatic PE
+TRIM_ADAPTERS="adapters/adapter.fa"
+
+trimmomatic PE \
+  -threads 4 \
+  -phred33 \
+  -summary qc_trim/mtb/trimmomatic/${SAMPLE}_trimmomatic_stats.txt \
+  "$RAW_DIR/${SAMPLE}_1.fastq.gz" \
+  "$RAW_DIR/${SAMPLE}_2.fastq.gz" \
+  qc_trim/mtb/trimmomatic/${SAMPLE}_R1_paired.fastq.gz \
+  qc_trim/mtb/trimmomatic/${SAMPLE}_R1_unpaired.fastq.gz \
+  qc_trim/mtb/trimmomatic/${SAMPLE}_R2_paired.fastq.gz \
+  qc_trim/mtb/trimmomatic/${SAMPLE}_R2_unpaired.fastq.gz \
+  ILLUMINACLIP:"$TRIM_ADAPTERS":2:30:10 \
+  SLIDINGWINDOW:4:20 \
+  HEADCROP:5 \
+  LEADING:3 \
+  TRAILING:3 \
+  MINLEN:40
+
+# QC after Trimmomatic
+fastqc qc_trim/mtb/trimmomatic/*_paired.fastq.gz -o qc_trim/mtb/trimmomatic
+multiqc qc_trim/mtb/trimmomatic -o qc_trim/mtb/trimmomatic
+
+
