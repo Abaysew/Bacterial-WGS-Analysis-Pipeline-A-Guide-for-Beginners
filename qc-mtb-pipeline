@@ -59,7 +59,7 @@ trimmomatic PE \
   MINLEN:40
 
 # QC after Trimmomatic
-fastqc qc_trim/mtb/trimmomatic/*_paired.fastq.gz -o qc_trim/mtb/trimmomatic
+fastqc trimmed/mtb/trimmomatic/*_paired.fastq.gz -o qc_trim/mtb/trimmomatic
 multiqc qc_trim/mtb/trimmomatic -o qc_trim/mtb/trimmomatic
 
 
