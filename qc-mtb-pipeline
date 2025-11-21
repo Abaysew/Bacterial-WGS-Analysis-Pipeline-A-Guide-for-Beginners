@@ -6,7 +6,7 @@ set -e
 
 # Update paths and sample
 RAW_DIR="raw_data/mtb"      # <- Updated directory path based on your location
-SAMPLE="ERR1485273"         # <- update for each sample
+SAMPLE="ERR15418593"         # <- update for each sample
 
 echo "Counting reads in $RAW_DIR/${SAMPLE}_1.fastq.gz..."
 echo $(( $(zcat "$RAW_DIR/${SAMPLE}_1.fastq.gz" | wc -l) / 4 ))
