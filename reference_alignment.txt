@@ -1,0 +1,62 @@
+#!/bin/bash
+# Alignment, Sorting, Duplicate Marking Pipeline
+# Author: Abaysew
+
+
+SAMPLE="ERR1485273"
+REF="ref_genome/ref.fasta" < spacify your referenece sequence and path
+THREADS=4
+
+# Create BAM directories
+mkdir -p alignments/mtb/fastp/bam
+mkdir -p alignments/mtb/trimmomatic/bam
+
+# -------------------------------
+# Reference indexing
+    bwa index $REF
+
+# Fastp-trimmed reads
+FASTP_R1="trimmed/mtb/fastp/${SAMPLE}_R1.trimmed.fastq.gz"
+FASTP_R2="trimmed/mtb/fastp/${SAMPLE}_R2.trimmed.fastq.gz"
+FASTP_BAM="alignments/mtb/fastp/bam/${SAMPLE}.sorted.dedup.bam"
+
+echo "Aligning fastp-trimmed reads..."
+bwa mem -t $THREADS $REF $FASTP_R1 $FASTP_R2 | samtools view -b - > alignments/mtb/fastp/bam/${SAMPLE}.bam
+
+echo "Sorting BAM..."
+samtools sort -@ $THREADS -o alignments/mtb/fastp/bam/${SAMPLE}.sorted.bam alignments/mtb/fastp/bam/${SAMPLE}.bam
+
+echo "Marking duplicates..."
+picard MarkDuplicates \
+    I=alignments/mtb/fastp/bam/${SAMPLE}.sorted.bam \
+    O=$FASTP_BAM \
+    M=alignments/mtb/fastp/bam/${SAMPLE}_dup_metrics.txt \
+    REMOVE_DUPLICATES=true
+
+echo "Indexing BAM..."
+samtools index $FASTP_BAM
+
+# -------------------------------
+# Trimmomatic-trimmed reads
+# -------------------------------
+TRIM_R1="trimmed/mtb/trimmomatic/${SAMPLE}_R1_paired.fastq.gz"
+TRIM_R2="trimmed/mtb/trimmomatic/${SAMPLE}_R2_paired.fastq.gz"
+TRIM_BAM="alignments/mtb/trimmomatic/bam/${SAMPLE}.sorted.dedup.bam"
+
+echo "Aligning Trimmomatic-trimmed reads..."
+bwa mem -t $THREADS $REF $TRIM_R1 $TRIM_R2 | samtools view -b - > alignments/mtb/trimmomatic/bam/${SAMPLE}.bam
+
+echo "Sorting BAM..."
+samtools sort -@ $THREADS -o alignments/mtb/trimmomatic/bam/${SAMPLE}.sorted.bam alignments/mtb/trimmomatic/bam/${SAMPLE}.bam
+
+echo "Marking duplicates..."
+picard MarkDuplicates \
+    I=alignments/mtb/trimmomatic/bam/${SAMPLE}.sorted.bam \
+    O=$TRIM_BAM \
+    M=alignments/mtb/trimmomatic/bam/${SAMPLE}_dup_metrics.txt \
+    REMOVE_DUPLICATES=true
+
+echo "Indexing BAM..."
+samtools index $TRIM_BAM
+
+
