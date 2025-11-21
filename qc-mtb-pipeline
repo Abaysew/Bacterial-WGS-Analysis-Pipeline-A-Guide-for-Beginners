@@ -47,10 +47,10 @@ trimmomatic PE \
   -summary qc_trim/mtb/trimmomatic/${SAMPLE}_trimmomatic_stats.txt \
   "$RAW_DIR/${SAMPLE}_1.fastq.gz" \
   "$RAW_DIR/${SAMPLE}_2.fastq.gz" \
-  qc_trim/mtb/trimmomatic/${SAMPLE}_R1_paired.fastq.gz \
-  qc_trim/mtb/trimmomatic/${SAMPLE}_R1_unpaired.fastq.gz \
-  qc_trim/mtb/trimmomatic/${SAMPLE}_R2_paired.fastq.gz \
-  qc_trim/mtb/trimmomatic/${SAMPLE}_R2_unpaired.fastq.gz \
+  trimmed/mtb/trimmomatic/${SAMPLE}_R1_paired.fastq.gz \
+  trimmed/mtb/trimmomatic/${SAMPLE}_R1_unpaired.fastq.gz \
+  trimmed/mtb/trimmomatic/${SAMPLE}_R2_paired.fastq.gz \
+  trimmed/mtb/trimmomatic/${SAMPLE}_R2_unpaired.fastq.gz \
   ILLUMINACLIP:"$TRIM_ADAPTERS":2:30:10 \
   SLIDINGWINDOW:4:20 \
   HEADCROP:5 \
