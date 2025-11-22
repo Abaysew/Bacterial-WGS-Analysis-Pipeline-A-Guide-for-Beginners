@@ -21,6 +21,8 @@ mkdir -p qc_trim/mtb/fastp
 mkdir -p qc_trim/mtb/trimmomatic
 mkdir -p trimmed/mtb/fastp
 mkdir -p trimmed/mtb/trimmomatic
+mkdir -p qc_trim/mtb/fastp_report
+mkdir -p trimmed/mtb/trimmomatic_report
 
 # ------------------------------
 # RAW QC
@@ -45,8 +47,8 @@ fastp \
   -w $THREADS \
   -o trimmed/mtb/fastp/${SAMPLE}_R1.trimmed.fastq.gz \
   -O trimmed/mtb/fastp/${SAMPLE}_R2.trimmed.fastq.gz \
-  --html qc_trim/mtb/fastp/${SAMPLE}.fastp.html \
-  --json qc_trim/mtb/fastp/${SAMPLE}.fastp.json
+  --html qc_trim/mtb/fastp_report${SAMPLE}.fastp.html \
+  --json qc_trim/mtb/fastp_report${SAMPLE}.fastp.json
 
 echo "FastQC after fastp..."
 fastqc trimmed/mtb/fastp/${SAMPLE}_R*.trimmed.fastq.gz -o qc_trim/mtb/fastp
@@ -60,7 +62,7 @@ echo "Running Trimmomatic..."
 trimmomatic PE \
   -threads $THREADS \
   -phred33 \
-  -summary qc_trim/mtb/trimmomatic/${SAMPLE}_trimmomatic_stats.txt \
+  -summary trimmed/mtb/trimmomatic_report/${SAMPLE}_trimmomatic_stats.txt \
   "$RAW_DIR/${SAMPLE}_1.fastq.gz" \
   "$RAW_DIR/${SAMPLE}_2.fastq.gz" \
   trimmed/mtb/trimmomatic/${SAMPLE}_R1_paired.fastq.gz \
