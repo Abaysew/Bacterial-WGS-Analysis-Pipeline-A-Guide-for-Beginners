@@ -1,0 +1,41 @@
+#!/bin/bash
+# Variant Calling Pipeline for Haploid Genomes (Bacteria)
+# Author: Abaysew
+
+
+# ------------------------------
+# USER INPUT
+# ------------------------------
+SAMPLE="ERR15418593"
+REF="ref_genome/ref.fasta"
+THREADS=4
+
+# Choose BAM file: fastp or Trimmomatic
+BAM="alignments/mtb/fastp/bam/${SAMPLE}.sorted.dedup.bam"
+#BAM="alignments/mtb/trimmomatic/bam/${SAMPLE}.sorted.dedup.bam"
+
+VCF_DIR="variants"
+mkdir -p $VCF_DIR
+# ------------------------------
+
+echo "Indexing BAM file if needed..."
+samtools index $BAM
+
+echo "Indexing reference if needed..."
+samtools faidx $REF
+
+echo "Calling variants (haploid ploidy)..."
+bcftools mpileup -f $REF -q 20 -Q 20 -B $BAM | \
+bcftools call -mv -Ov --ploidy 1 -o $VCF_DIR/${SAMPLE}.raw.vcf
+
+echo "Filtering variants (QUAL >= 30 and DP >= 10)..."
+bcftools filter -i 'QUAL>=30 && DP>=10' \
+  -Ov -o $VCF_DIR/${SAMPLE}.filtered.vcf $VCF_DIR/${SAMPLE}.raw.vcf
+
+echo "Indexing filtered VCF..."
+bcftools index $VCF_DIR/${SAMPLE}.filtered.vcf
+
+echo "Variant calling (haploid) completed!"
+echo "Raw VCF: $VCF_DIR/${SAMPLE}.raw.vcf"
+echo "Filtered VCF: $VCF_DIR/${SAMPLE}.filtered.vcf"
+
