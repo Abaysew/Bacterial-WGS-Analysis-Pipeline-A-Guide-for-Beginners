@@ -1,41 +1,63 @@
 #!/bin/bash
-# Variant Calling Pipeline for Haploid Genomes (Bacteria)
+# Haploid Variant Calling (Single Sample, Line by Line)
 # Author: Abaysew
-
 
 # ------------------------------
 # USER INPUT
 # ------------------------------
 SAMPLE="ERR15418593"
 REF="ref_genome/ref.fasta"
-THREADS=4
-
-# Choose BAM file: fastp or Trimmomatic
-BAM="alignments/mtb/fastp/bam/${SAMPLE}.sorted.dedup.bam"
-#BAM="alignments/mtb/trimmomatic/bam/${SAMPLE}.sorted.dedup.bam"
-
 VCF_DIR="variants"
-mkdir -p $VCF_DIR
+mkdir -p "$VCF_DIR"
 # ------------------------------
 
-echo "Indexing BAM file if needed..."
-samtools index $BAM
+# ------------------------------
+# FASTP BAM Variant Calling
+# ------------------------------
+FASTP_BAM="alignments/mtb/fastp/bam/${SAMPLE}.sorted.dedup.bam"
 
-echo "Indexing reference if needed..."
-samtools faidx $REF
+# Index BAM if needed
+samtools index "$FASTP_BAM"
 
-echo "Calling variants (haploid ploidy)..."
-bcftools mpileup -f $REF -q 20 -Q 20 -B $BAM | \
-bcftools call -mv -Ov --ploidy 1 -o $VCF_DIR/${SAMPLE}.raw.vcf
+# Index reference if needed
+samtools faidx "$REF"
 
-echo "Filtering variants (QUAL >= 30 and DP >= 10)..."
-bcftools filter -i 'QUAL>=30 && DP>=10' \
-  -Ov -o $VCF_DIR/${SAMPLE}.filtered.vcf $VCF_DIR/${SAMPLE}.raw.vcf
+# Call variants
+bcftools mpileup -f "$REF" -q 20 -Q 20 -B -Ou "$FASTP_BAM" | \
+bcftools call -mv -Ov --ploidy 1 -o "$VCF_DIR/${SAMPLE}.fastp.raw.vcf"
 
-echo "Indexing filtered VCF..."
-bcftools index $VCF_DIR/${SAMPLE}.filtered.vcf
+# Filter variants
+bcftools filter -i 'QUAL>=30 && DP>=10' -Ov -o "$VCF_DIR/${SAMPLE}.fastp.filtered.vcf" "$VCF_DIR/${SAMPLE}.fastp.raw.vcf"
 
-echo "Variant calling (haploid) completed!"
-echo "Raw VCF: $VCF_DIR/${SAMPLE}.raw.vcf"
-echo "Filtered VCF: $VCF_DIR/${SAMPLE}.filtered.vcf"
+# Compress filtered VCF
+bgzip -c "$VCF_DIR/${SAMPLE}.fastp.filtered.vcf" > "$VCF_DIR/${SAMPLE}.fastp.filtered.vcf.gz"
 
+# Index compressed VCF
+bcftools index "$VCF_DIR/${SAMPLE}.fastp.filtered.vcf.gz"
+
+
+echo "FASTP haploid variant calling completed!"
+
+# ------------------------------
+# TRIMMOMATIC BAM Variant Calling
+# ------------------------------
+TRIM_BAM="alignments/mtb/trimmomatic/bam/${SAMPLE}.sorted.dedup.bam"
+
+# Index BAM if needed
+samtools index "$TRIM_BAM"
+
+# Call variants
+bcftools mpileup -f "$REF" -q 20 -Q 20 -B -Ou "$TRIM_BAM" | \
+bcftools call -mv -Ov --ploidy 1 -o "$VCF_DIR/${SAMPLE}.trimmomatic.raw.vcf"
+
+# Filter variants
+bcftools filter -i 'QUAL>=30 && DP>=10' -Ov -o "$VCF_DIR/${SAMPLE}.trimmomatic.filtered.vcf" "$VCF_DIR/${SAMPLE}.trimmomatic.raw.vcf"
+
+# Compress the filtered VCF
+bgzip -c "$VCF_DIR/${SAMPLE}.trimmomatic.filtered.vcf" > "$VCF_DIR/${SAMPLE}.trimmomatic.filtered.vcf.gz"
+
+# Index the compressed VCF
+bcftools index "$VCF_DIR/${SAMPLE}.trimmomatic.filtered.vcf.gz"
+
+
+echo "Trimmomatic haploid variant calling completed!"
