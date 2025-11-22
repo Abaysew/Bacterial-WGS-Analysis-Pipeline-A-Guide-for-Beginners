@@ -47,8 +47,8 @@ fastp \
   -w $THREADS \
   -o trimmed/mtb/fastp/${SAMPLE}_R1.trimmed.fastq.gz \
   -O trimmed/mtb/fastp/${SAMPLE}_R2.trimmed.fastq.gz \
-  --html qc_trim/mtb/fastp_report${SAMPLE}.fastp.html \
-  --json qc_trim/mtb/fastp_report${SAMPLE}.fastp.json
+  --html qc_trim/mtb/fastp_report/${SAMPLE}.fastp.html \
+  --json qc_trim/mtb/fastp_report/${SAMPLE}.fastp.json
 
 echo "FastQC after fastp..."
 fastqc trimmed/mtb/fastp/${SAMPLE}_R*.trimmed.fastq.gz -o qc_trim/mtb/fastp
