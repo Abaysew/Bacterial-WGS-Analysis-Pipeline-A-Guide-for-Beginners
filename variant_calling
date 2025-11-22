@@ -1,5 +1,5 @@
 #!/bin/bash
-# Haploid Variant Calling (Single Sample, Line by Line)
+# Haploid Variant Calling (Single Sample, SNP-only)
 # Author: Abaysew
 
 # ------------------------------
@@ -26,17 +26,15 @@ samtools faidx "$REF"
 bcftools mpileup -f "$REF" -q 20 -Q 20 -B -Ou "$FASTP_BAM" | \
 bcftools call -mv -Ov --ploidy 1 -o "$VCF_DIR/${SAMPLE}.fastp.raw.vcf"
 
-# Filter variants
-bcftools filter -i 'QUAL>=30 && DP>=10' -Ov -o "$VCF_DIR/${SAMPLE}.fastp.filtered.vcf" "$VCF_DIR/${SAMPLE}.fastp.raw.vcf"
+# Filter variants: QUAL>=30, DP>=10, only SNPs
+bcftools view -v snps "$VCF_DIR/${SAMPLE}.fastp.raw.vcf" | \
+bcftools filter -i 'QUAL>=30 && DP>=10' -Ov -o "$VCF_DIR/${SAMPLE}.fastp.filtered.snps.vcf"
 
-# Compress filtered VCF
-bgzip -c "$VCF_DIR/${SAMPLE}.fastp.filtered.vcf" > "$VCF_DIR/${SAMPLE}.fastp.filtered.vcf.gz"
+# Compress and index
+bgzip -c "$VCF_DIR/${SAMPLE}.fastp.filtered.snps.vcf" > "$VCF_DIR/${SAMPLE}.fastp.filtered.snps.vcf.gz"
+bcftools index "$VCF_DIR/${SAMPLE}.fastp.filtered.snps.vcf.gz"
 
-# Index compressed VCF
-bcftools index "$VCF_DIR/${SAMPLE}.fastp.filtered.vcf.gz"
-
-
-echo "FASTP haploid variant calling completed!"
+echo "FASTP SNP calling completed!"
 
 # ------------------------------
 # TRIMMOMATIC BAM Variant Calling
@@ -50,14 +48,28 @@ samtools index "$TRIM_BAM"
 bcftools mpileup -f "$REF" -q 20 -Q 20 -B -Ou "$TRIM_BAM" | \
 bcftools call -mv -Ov --ploidy 1 -o "$VCF_DIR/${SAMPLE}.trimmomatic.raw.vcf"
 
-# Filter variants
-bcftools filter -i 'QUAL>=30 && DP>=10' -Ov -o "$VCF_DIR/${SAMPLE}.trimmomatic.filtered.vcf" "$VCF_DIR/${SAMPLE}.trimmomatic.raw.vcf"
+# Filter variants: QUAL>=30, DP>=10, only SNPs
+bcftools view -v snps "$VCF_DIR/${SAMPLE}.trimmomatic.raw.vcf" | \
+bcftools filter -i 'QUAL>=30 && DP>=10' -Ov -o "$VCF_DIR/${SAMPLE}.trimmomatic.filtered.snps.vcf"
 
-# Compress the filtered VCF
-bgzip -c "$VCF_DIR/${SAMPLE}.trimmomatic.filtered.vcf" > "$VCF_DIR/${SAMPLE}.trimmomatic.filtered.vcf.gz"
+# Compress and index
+bgzip -c "$VCF_DIR/${SAMPLE}.trimmomatic.filtered.snps.vcf" > "$VCF_DIR/${SAMPLE}.trimmomatic.filtered.snps.vcf.gz"
+bcftools index "$VCF_DIR/${SAMPLE}.trimmomatic.filtered.snps.vcf.gz"
 
-# Index the compressed VCF
-bcftools index "$VCF_DIR/${SAMPLE}.trimmomatic.filtered.vcf.gz"
+echo "Trimmomatic SNP calling completed!"
 
+# ------------------------------
+# Compare SNP positions
+# ------------------------------
+ISec_DIR="$VCF_DIR/vcf_comparison"
+mkdir -p "$ISec_DIR"
 
-echo "Trimmomatic haploid variant calling completed!"
+# Extract positions
+bcftools query -f '%CHROM\t%POS\n' "$VCF_DIR/${SAMPLE}.fastp.filtered.snps.vcf.gz" | sort > "$ISec_DIR/fastp_pos.txt"
+bcftools query -f '%CHROM\t%POS\n' "$VCF_DIR/${SAMPLE}.trimmomatic.filtered.snps.vcf.gz" | sort > "$ISec_DIR/trim_pos.txt"
+
+# Shared and unique positions
+comm -12 "$ISec_DIR/fastp_pos.txt" "$ISec_DIR/trim_pos.txt" > "$ISec_DIR/shared_positions.txt"
+echo "Shared SNP positions: $(wc -l < "$ISec_DIR/shared_positions.txt")"
+echo "FASTP unique SNPs: $(comm -23 "$ISec_DIR/fastp_pos.txt" "$ISec_DIR/trim_pos.txt" | wc -l)"
+echo "Trimmomatic unique SNPs: $(comm -13 "$ISec_DIR/fastp_pos.txt" "$ISec_DIR/trim_pos.txt" | wc -l)"
