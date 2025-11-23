@@ -26,7 +26,7 @@ samtools faidx "$REF"
 bcftools mpileup -f "$REF" -q 20 -Q 20 -B -Ou "$FASTP_BAM" | \
 bcftools call -mv -Ov --ploidy 1 -o "$VCF_DIR/${SAMPLE}.fastp.raw.vcf"
 
-# Filter variants: QUAL>=30, DP>=10, only SNPs
+# Filter variants: QUAL>=30, DP>=10, only SNPs (You can choose to mask specific regions like repeats whenever needed)
 bcftools view -v snps "$VCF_DIR/${SAMPLE}.fastp.raw.vcf" | \
 bcftools filter -i 'QUAL>=30 && DP>=10' -Ov -o "$VCF_DIR/${SAMPLE}.fastp.filtered.snps.vcf"
 
@@ -48,7 +48,7 @@ samtools index "$TRIM_BAM"
 bcftools mpileup -f "$REF" -q 20 -Q 20 -B -Ou "$TRIM_BAM" | \
 bcftools call -mv -Ov --ploidy 1 -o "$VCF_DIR/${SAMPLE}.trimmomatic.raw.vcf"
 
-# Filter variants: QUAL>=30, DP>=10, only SNPs
+# Filter variants: QUAL>=30, DP>=10, only SNPs (You can choose to mask specific regions like repeats whenever needed)
 bcftools view -v snps "$VCF_DIR/${SAMPLE}.trimmomatic.raw.vcf" | \
 bcftools filter -i 'QUAL>=30 && DP>=10' -Ov -o "$VCF_DIR/${SAMPLE}.trimmomatic.filtered.snps.vcf"
 
