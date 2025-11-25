@@ -1,0 +1,53 @@
+#!/bin/bash
+# Phylogenetic Analysis Using Consensus Sequences
+# Author: Abaysew
+
+
+# USER INPUT
+
+REF="ref_genome/ref.fasta"
+VCF_DIR="variants"
+CONS_DIR="consensus"
+ALIGN="concatenated_alignment.fa"
+SNP_ALIGNMENT="snpsitesOut.fa"
+
+mkdir -p "$CONS_DIR"
+
+
+# Index reference
+samtools faidx "$REF"
+
+echo "Generating consensus sequences for all samples..."
+for VCF in "$VCF_DIR"/*.filtered.snps.vcf.gz; do
+    SAMPLE=$(basename "$VCF" .filtered.snps.vcf.gz)
+
+    echo "  -> Processing sample: $SAMPLE"
+
+    # Generate consensus FASTA
+    bcftools consensus -f "$REF" "$VCF" > "$CONS_DIR/${SAMPLE}.fa"
+
+    # Rename FASTA header to sample name
+    sed -i "s/^>.*/>${SAMPLE}/" "$CONS_DIR/${SAMPLE}.fa"
+done
+
+
+# Create Concatenated Alignment
+
+cat "$REF" "$CONS_DIR"/*.fa > "$ALIGN"
+
+# Extract SNP Sites Only
+
+snp-sites -o "$SNP_ALIGNMENT" "$ALIGN"
+
+# Compute SNP Distance Matrix
+# ------------------------------
+echo "Computing SNP distance matrix..."
+
+snp-dists "$SNP_ALIGNMENT" > matrix.tsv
+
+# Build Phylogenetic Tree (IQ-TREE)
+
+iqtree -s "$SNP_ALIGNMENT" -nt AUTO -bb 1000 > tree.log
+
+echo "Phylogenetic analysis completed successfully!"
+
