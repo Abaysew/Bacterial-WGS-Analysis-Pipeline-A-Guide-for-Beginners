@@ -1,0 +1,32 @@
+#!/bin/bash
+# SNP Annotation Pipeline for Mycobacterium tuberculosis H37Rv
+# Author: Abaysew
+
+
+# Set directories
+cd SnpEff
+cp -r /path/to/variants/ .	
+VCF_DIR="variants"
+ANNO_DIR="annotation"
+mkdir -p "$ANNO_DIR"
+
+
+# Step 1: Rename reference in VCF
+sed 's|NC_000962.3|Chromosome|g' \
+  "$VCF_DIR/ERR15418593.fastp.filtered.snps.vcf" \
+  > "$ANNO_DIR/ERR15418593_rename.vcf"
+
+# Step 2: Run SnpEff annotation
+java -jar /home/betre/snpEff/snpEff.jar \
+  Mycobacterium_tuberculosis_h37rv \
+  -csvStats "$ANNO_DIR/ERR15418593_snpEff.csv" \
+  -htmlStats "$ANNO_DIR/ERR15418593_snpEff.html" \
+  -v \
+  "$ANNO_DIR/ERR15418593_rename.vcf" \
+  > "$ANNO_DIR/ERR15418593.snpEff.ann.vcf"
+
+
+# Step 3: Filter annotated VCF for MODERATE impact or katG gene
+grep -E 'MODERATE|katG' "$ANNO_DIR/ERR15418593.snpEff.ann.vcf" \
+  > "$ANNO_DIR/ERR15418593_MODERATE_katG.vcf"
+
