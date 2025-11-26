@@ -1,0 +1,29 @@
+#!/bin/bash
+
+RAW_DIR="raw_data/mtb"          # <-- update this to your FASTQ folder
+SAMPLE="SRR33015687"            # <-- update with your sample ID
+THREADS=4
+
+# ==== CREATE DIRECTORIES ====
+mkdir -p assembly
+mkdir -p quast_out
+
+# ==== RUN SPAdes ASSEMBLY ====
+
+spades.py \
+    -1 "$RAW_DIR/${SAMPLE}_1.fastq.gz" \
+    -2 "$RAW_DIR/${SAMPLE}_2.fastq.gz" \
+    -o assembly/"$SAMPLE" \
+    -t $THREADS \
+    -m 6
+
+# ==== RUN QUAST ====
+
+quast.py \
+    assembly/"$SAMPLE"/contigs.fasta \
+    -o quast_out/"$SAMPLE" \
+    -t $THREADS
+
+echo "QUAST completed!"
+
+
